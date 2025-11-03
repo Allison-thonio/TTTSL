@@ -1,0 +1,180 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Updated color palette for TTTSL brand - earthy, minimalist aesthetic */
+    --background: oklch(1 0 0); /* Pure white */
+    --foreground: oklch(0.35 0 0); /* Deep gray #4b5563 equivalent */
+    --card: oklch(0.98 0.02 85); /* Soft off-white #fefce8 equivalent */
+    --card-foreground: oklch(0.35 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.35 0 0);
+    --primary: oklch(0.45 0.15 85); /* Earthy yellow #a16207 equivalent */
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.65 0.25 285); /* Purple accent #8b5cf6 equivalent */
+    --secondary-foreground: oklch(1 0 0);
+    --muted: oklch(0.98 0.02 85); /* Soft off-white for sections */
+    --muted-foreground: oklch(0.35 0 0);
+    --accent: oklch(0.65 0.25 285); /* Purple accent for CTAs */
+    --accent-foreground: oklch(1 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(1 0 0);
+    --border: oklch(0.92 0 0); /* Light gray borders */
+    --input: oklch(0.96 0 0); /* Input field background */
+    --ring: oklch(0.65 0.25 285); /* Focus ring matches accent */
+    --chart-1: oklch(0.45 0.15 85);
+    --chart-2: oklch(0.65 0.25 285);
+    --chart-3: oklch(0.98 0.02 85);
+    --chart-4: oklch(0.35 0 0);
+    --chart-5: oklch(1 0 0);
+    --radius: 0.5rem; /* Slightly smaller radius for minimalist feel */
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: oklch(0.35 0 0);
+    --sidebar-primary: oklch(0.98 0.02 85);
+    --sidebar-primary-foreground: oklch(0.35 0 0);
+    --sidebar-accent: oklch(0.65 0.25 285);
+    --sidebar-accent-foreground: oklch(1 0 0);
+    --sidebar-border: oklch(0.92 0 0);
+    --sidebar-ring: oklch(0.65 0.25 285);
+    --swanky-pink: #ff66b2;
+    --swanky-gold: #d4af37;
+    --swanky-gold-rgb: 212,175,55;
+  }
+
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.145 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.145 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.55 0.15 85); /* Lighter earthy tone for dark mode */
+    --primary-foreground: oklch(0.145 0 0);
+    --secondary: oklch(0.75 0.25 285); /* Lighter purple for dark mode */
+    --secondary-foreground: oklch(0.145 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.75 0.25 285);
+    --accent-foreground: oklch(0.145 0 0);
+    --destructive: oklch(0.396 0.141 25.723);
+    --destructive-foreground: oklch(0.637 0.237 25.331);
+    --border: oklch(0.269 0 0);
+    --input: oklch(0.269 0 0);
+    --ring: oklch(0.75 0.25 285);
+    --chart-1: oklch(0.55 0.15 85);
+    --chart-2: oklch(0.75 0.25 285);
+    --chart-3: oklch(0.269 0 0);
+    --chart-4: oklch(0.708 0 0);
+    --chart-5: oklch(0.985 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.269 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.75 0.25 285);
+    --sidebar-accent-foreground: oklch(0.145 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+    --sidebar-ring: oklch(0.75 0.25 285);
+    --swanky-pink: oklch(0.98 0.02 85);
+    --swanky-gold: #d4af37;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Swanky brand styling for the brush script text next to the logo */
+.swanky-brand {
+  font-family: "Brush Script MT", "Brush Script", cursive;
+  color: var(--swanky-gold);
+  letter-spacing: 0.01em;
+  display: inline-block;
+  /* Make the brush-script signature a little larger for better legibility */
+  font-size: 1.125rem; /* ~18px on a 16px root */
+  line-height: 1;
+  vertical-align: baseline;
+  transform: translateY(-1px); /* slight visual lift to align with TTTSL text */
+  transition: font-size 150ms ease, transform 150ms ease, text-shadow 150ms ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dark mode: subtle shadow to improve contrast on darker backgrounds */
+.dark .swanky-brand {
+  color: var(--swanky-gold);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.5);
+}
+
+/* Respect system dark mode as well (for environments that don't use .dark class) */
+@media (prefers-color-scheme: dark) {
+  .swanky-brand {
+    color: var(--swanky-gold);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.5);
+  }
+}
+
+/* Responsive adjustments: slightly smaller on small screens, a touch larger on wide screens */
+@media (max-width: 640px) {
+  .swanky-brand {
+    font-size: 1rem; /* ~16px on mobile */
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1024px) {
+  .swanky-brand {
+    font-size: 1.25rem; /* slightly larger on large screens */
+    transform: translateY(-1px);
+  }
+}
+
+/* Swanky decorative classes */
+.swanky-underline {
+  /* subtle SVG micro-pattern (diagonal hatch) as a decorative underline */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath d='M0 4 L4 0 L8 4' stroke='%23d4af37' stroke-width='0.8' fill='none'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  background-size: 8px 4px;
+  height: 6px;
+  border-radius: 2px;
+}
+
+.swanky-outline {
+  border: 1px solid var(--swanky-gold);
+  border-radius: 6px;
+}
+
+/* Focus ring for swanky CTAs (accessible, subtle) */
+.swanky-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--swanky-gold-rgb), 0.12);
+  border-color: rgba(var(--swanky-gold-rgb), 0.6);
+}
+
+/* Utility for CTA buttons/links that should use Swanky gold */
+.swanky-cta {
+  background: var(--swanky-gold);
+  color: black;
+}
+
+.swanky-link {
+  color: inherit;
+  transition: color 150ms ease, text-decoration-color 150ms ease;
+}
+.swanky-link:hover,
+.swanky-link:focus-visible {
+  color: var(--swanky-gold);
+  text-decoration-color: var(--swanky-gold);
+}
+
+/* Ensure swanky-button variant receives the gold focus ring */
+.swanky-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--swanky-gold-rgb), 0.12);
+}
