@@ -2,10 +2,21 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { SearchBar } from '../components/search-bar'
-import { User2, ShoppingCart } from 'lucide-react'
+import { User2, ShoppingCart, Menu, ChevronDown } from 'lucide-react'
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 
 const Navbar = () => {
   const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+  const [isShopOpen, setIsShopOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   // For Next.js 13+, usePathname is preferred, but fallback for SSR
   // const pathname = usePathname ? usePathname() : (typeof window !== 'undefined' ? window.location.pathname : '')
 
@@ -49,7 +60,7 @@ const Navbar = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-6">
+            <div className="hidden md:flex items-center space-x-6">
               <SearchBar />
               <Link
                 href="/auth/login"
@@ -65,6 +76,77 @@ const Navbar = () => {
               >
                 <ShoppingCart className="w-5 h-5" />
               </Link>
+            </div>
+
+            {/* Mobile Menu */}
+            <div className="md:hidden flex items-center space-x-4">
+              <SearchBar />
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[350px]">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col space-y-4">
+                    {/* Shop Dropdown */}
+                    <div>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between"
+                        onClick={() => setIsShopOpen(!isShopOpen)}
+                      >
+                        SHOP
+                        <ChevronDown className={`w-4 h-4 transform transition-transform ${isShopOpen ? 'rotate-180' : ''}`} />
+                      </Button>
+                      <div className={`pl-4 space-y-2 overflow-hidden transition-all ${isShopOpen ? 'h-auto mt-2' : 'h-0'}`}>
+                        <Link
+                          href="/men"
+                          className="block py-2 text-stone-600 hover:text-stone-900"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          Men
+                        </Link>
+                        <Link
+                          href="/women"
+                          className="block py-2 text-stone-600 hover:text-stone-900"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          Women
+                        </Link>
+                      </div>
+                    </div>
+                    <Link
+                      href="/about"
+                      className="block py-2 text-stone-600 hover:text-stone-900"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      ABOUT
+                    </Link>
+                    <hr className="border-stone-200" />
+                    <Link
+                      href="/auth/login"
+                      className="flex items-center space-x-2 text-stone-600 hover:text-stone-900"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User2 className="w-5 h-5" />
+                      <span>Account</span>
+                    </Link>
+                    <Link
+                      href="/cart"
+                      className="flex items-center space-x-2 text-stone-600 hover:text-stone-900"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      <span>Cart</span>
+                    </Link>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
