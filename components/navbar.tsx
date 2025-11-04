@@ -88,8 +88,8 @@ const Navbar = () => {
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[350px]">
-                  <SheetHeader className="mb-4">
+                <SheetContent side="left" className="w-[85vw] max-w-[400px] border-r border-stone-200">
+                  <SheetHeader className="mb-6">
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
                   <div className="flex flex-col space-y-4">
@@ -97,23 +97,23 @@ const Navbar = () => {
                     <div>
                       <Button
                         variant="ghost"
-                        className="w-full justify-between"
+                        className="w-full justify-between text-lg font-light"
                         onClick={() => setIsShopOpen(!isShopOpen)}
                       >
                         SHOP
-                        <ChevronDown className={`w-4 h-4 transform transition-transform ${isShopOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-4 h-4 transform transition-transform duration-300 ${isShopOpen ? 'rotate-180' : ''}`} />
                       </Button>
-                      <div className={`pl-4 space-y-2 overflow-hidden transition-all ${isShopOpen ? 'h-auto mt-2' : 'h-0'}`}>
+                      <div className={`pl-4 space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${isShopOpen ? 'h-auto mt-2 opacity-100' : 'h-0 opacity-0'}`}>
                         <Link
                           href="/men"
-                          className="block py-2 text-stone-600 hover:text-stone-900"
+                          className="block py-3 text-stone-600 hover:text-stone-900 transition-colors duration-200"
                           onClick={() => setIsOpen(false)}
                         >
                           Men
                         </Link>
                         <Link
                           href="/women"
-                          className="block py-2 text-stone-600 hover:text-stone-900"
+                          className="block py-3 text-stone-600 hover:text-stone-900 transition-colors duration-200"
                           onClick={() => setIsOpen(false)}
                         >
                           Women
@@ -122,27 +122,27 @@ const Navbar = () => {
                     </div>
                     <Link
                       href="/about"
-                      className="block py-2 text-stone-600 hover:text-stone-900"
+                      className="block py-3 text-lg font-light text-stone-600 hover:text-stone-900 transition-colors duration-200"
                       onClick={() => setIsOpen(false)}
                     >
                       ABOUT
                     </Link>
-                    <hr className="border-stone-200" />
+                    <hr className="border-stone-200 my-4" />
                     <Link
                       href="/auth/login"
-                      className="flex items-center space-x-2 text-stone-600 hover:text-stone-900"
+                      className="flex items-center space-x-3 py-3 text-stone-600 hover:text-stone-900 transition-colors duration-200"
                       onClick={() => setIsOpen(false)}
                     >
                       <User2 className="w-5 h-5" />
-                      <span>Account</span>
+                      <span className="text-lg font-light">Account</span>
                     </Link>
                     <Link
                       href="/cart"
-                      className="flex items-center space-x-2 text-stone-600 hover:text-stone-900"
+                      className="flex items-center space-x-3 py-3 text-stone-600 hover:text-stone-900 transition-colors duration-200"
                       onClick={() => setIsOpen(false)}
                     >
                       <ShoppingCart className="w-5 h-5" />
-                      <span>Cart</span>
+                      <span className="text-lg font-light">Cart</span>
                     </Link>
                   </div>
                 </SheetContent>
