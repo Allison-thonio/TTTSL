@@ -14,6 +14,7 @@ import { AdminAuthGuard } from "@/components/admin-auth-guard"
 import { getSiteImage } from "@/lib/utils"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { useRouter, useSearchParams } from "next/navigation"
+import { fetchProducts, upsertProduct, removeProduct, fetchOrders, fetchSiteImages, updateSiteImages } from "@/app/actions"
 import {
   Package,
   Users,
@@ -107,10 +108,10 @@ export default function AdminDashboard() {
     setCurrency(savedCurrency)
   }, [])
 
-  const loadDashboardData = () => {
-    const savedProducts = JSON.parse(localStorage.getItem("adminProducts") || "[]")
-    const savedOrders = JSON.parse(localStorage.getItem("adminOrders") || "[]")
-    const savedSiteImages = JSON.parse(localStorage.getItem("siteImages") || "{}")
+  const loadDashboardData = async () => {
+    const savedProducts = await fetchProducts()
+    const savedOrders = await fetchOrders()
+    const savedSiteImages = await fetchSiteImages()
 
     setProducts(savedProducts)
     setRecentOrders(savedOrders)
@@ -135,7 +136,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock) {
       alert("Please fill in all required fields")
       return
@@ -152,18 +153,14 @@ export default function AdminDashboard() {
       brand: newProduct.brand || "TTTSL",
       sku: newProduct.sku || `SKU-${Date.now()}`,
       specifications: newProduct.specifications,
-      image: newProduct.image ? URL.createObjectURL(newProduct.image) : null,
+      // For now, we still use blob URL for immediate preview, but in real app this should be uploaded
+      // Since we can't easily upload files to disk in this environment without more setup, 
+      // we'll convert to base64 for the JSON DB
+      image: newProduct.image ? await convertToBase64(newProduct.image) : null,
     }
 
-    const updatedProducts = [...products, product]
-    setProducts(updatedProducts)
-    localStorage.setItem("adminProducts", JSON.stringify(updatedProducts))
-
-    setStats((prev) => ({
-      ...prev,
-      totalProducts: updatedProducts.length,
-    }))
-
+    await upsertProduct(product)
+    await loadDashboardData()
     resetForm()
   }
 
@@ -183,7 +180,7 @@ export default function AdminDashboard() {
     setShowAddProduct(true)
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingProduct || !newProduct.name || !newProduct.price || !newProduct.stock) {
       alert("Please fill in all required fields")
       return
@@ -199,14 +196,21 @@ export default function AdminDashboard() {
       brand: newProduct.brand || editingProduct.brand,
       sku: newProduct.sku,
       specifications: newProduct.specifications,
-      image: newProduct.image ? URL.createObjectURL(newProduct.image) : editingProduct.image,
+      image: newProduct.image ? await convertToBase64(newProduct.image) : editingProduct.image,
     }
 
-    const updatedProducts = products.map((p) => (p.id === editingProduct.id ? updatedProduct : p))
-    setProducts(updatedProducts)
-    localStorage.setItem("adminProducts", JSON.stringify(updatedProducts))
-
+    await upsertProduct(updatedProduct)
+    await loadDashboardData()
     resetForm()
+  }
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = error => reject(error)
+    })
   }
 
   const resetForm = () => {
@@ -225,16 +229,10 @@ export default function AdminDashboard() {
     setShowAddProduct(false)
   }
 
-  const handleDeleteProduct = (productId: number) => {
+  const handleDeleteProduct = async (productId: number) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      const updatedProducts = products.filter((p) => p.id !== productId)
-      setProducts(updatedProducts)
-      localStorage.setItem("adminProducts", JSON.stringify(updatedProducts))
-
-      setStats((prev) => ({
-        ...prev,
-        totalProducts: updatedProducts.length,
-      }))
+      await removeProduct(productId)
+      await loadDashboardData()
     }
   }
 
@@ -268,16 +266,15 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file)
   }
 
-  const handleSaveSiteImages = () => {
-    localStorage.setItem("siteImages", JSON.stringify(siteImages))
-    alert("Site images saved. Refresh pages to see updates where applicable.")
+  const handleSaveSiteImages = async () => {
+    await updateSiteImages(siteImages)
+    alert("Site images saved.")
   }
 
   const handleResetSiteImage = (key: string) => {
     const copy = { ...siteImages }
     delete copy[key]
     setSiteImages(copy)
-    localStorage.setItem("siteImages", JSON.stringify(copy))
   }
 
   const getStatusColor = (status: string) => {
