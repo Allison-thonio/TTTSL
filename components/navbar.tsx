@@ -3,12 +3,14 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { SearchBar } from '../components/search-bar'
-import { User2, ShoppingCart } from 'lucide-react'
+import { User2, ShoppingCart, Menu, Search } from 'lucide-react'
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { useState } from 'react'
 
 const Navbar = () => {
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
-  // For Next.js 13+, usePathname is preferred, but fallback for SSR
-  // const pathname = usePathname ? usePathname() : (typeof window !== 'undefined' ? window.location.pathname : '')
+  const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false)
 
   const navLinks = [
     { href: '/shop', label: 'SHOP' },
@@ -22,13 +24,67 @@ const Navbar = () => {
       <nav className="bg-white border-b border-stone-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+
+            {/* Mobile Menu Trigger */}
+            <div className="md:hidden flex items-center">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="mr-2">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                  <SheetHeader className="border-b pb-4 mb-4">
+                    <SheetTitle className="text-left">
+                      <Link href="/" onClick={() => setIsOpen(false)} className="flex flex-col items-start">
+                        <span className="text-2xl font-light tracking-wide text-stone-900">TTTSL</span>
+                        <span className="swanky-brand text-xs leading-none text-stone-500">swanky by ellery</span>
+                      </Link>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col space-y-4">
+                    {navLinks.map((link) => {
+                      const isActive = pathname === link.href || (link.href === '/shop' && pathname === '/')
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => setIsOpen(false)}
+                          className={
+                            isActive
+                              ? 'text-lg font-medium text-stone-900 border-l-2 border-stone-900 pl-4'
+                              : 'text-lg text-stone-600 hover:text-stone-900 transition-colors pl-4 border-l-2 border-transparent'
+                          }
+                        >
+                          {link.label}
+                        </Link>
+                      )
+                    })}
+                    <div className="pt-4 border-t border-stone-100 mt-4 space-y-4">
+                      <Link
+                        href="/auth/login"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center space-x-2 text-stone-600 hover:text-stone-900 pl-4"
+                      >
+                        <User2 className="w-5 h-5" />
+                        <span>Account</span>
+                      </Link>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Logo */}
             <div className="flex items-center">
               <Link href="/" className="text-2xl font-light tracking-wide text-stone-900 flex md:flex-row flex-col md:items-baseline items-center gap-1 md:gap-3">
                 <span>TTTSL</span>
-                <span className="swanky-brand text-sm leading-none">swanky by ellery</span>
+                <span className="swanky-brand text-sm leading-none hidden md:inline-block">swanky by ellery</span>
               </Link>
             </div>
 
+            {/* Desktop Nav */}
             <div className="hidden md:block">
               <div className="flex items-center space-x-8">
                 {navLinks.map((link) => {
@@ -50,11 +106,20 @@ const Navbar = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-6">
-              <SearchBar />
+            {/* Icons */}
+            <div className="flex items-center space-x-2 md:space-x-6">
+              <div className="hidden md:block">
+                <SearchBar />
+              </div>
+              <div className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Search className="w-5 h-5" />
+                </Button>
+              </div>
+
               <Link
                 href="/auth/login"
-                className="text-stone-600 hover:text-stone-900 transition-colors"
+                className="text-stone-600 hover:text-stone-900 transition-colors hidden md:block"
                 aria-label="Account"
               >
                 <User2 className="w-5 h-5" />
