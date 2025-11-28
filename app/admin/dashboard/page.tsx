@@ -5,16 +5,15 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from "next/link"
-import Header from "@/components/header"
-import { useRouter } from "next/navigation"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet"
 import { AdminAuthGuard } from "@/components/admin-auth-guard"
 import { getSiteImage } from "@/lib/utils"
+import { AdminSidebar } from "@/components/admin-sidebar"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   Package,
   Users,
@@ -25,11 +24,26 @@ import {
   Edit,
   Trash2,
   Plus,
-  LogOut,
   Upload,
   Save,
   X,
+  Menu,
+  Search,
+  Filter
 } from "lucide-react"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
+} from "recharts"
 
 interface Product {
   id: number
@@ -47,6 +61,10 @@ interface Product {
 
 export default function AdminDashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const currentTab = searchParams.get("tab") || "dashboard"
+
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
@@ -72,6 +90,16 @@ export default function AdminDashboard() {
   const [specValue, setSpecValue] = useState("")
   const [siteImages, setSiteImages] = useState<{ [k: string]: string }>({})
   const [currency, setCurrency] = useState<string>("USD")
+
+  // Mock Data for Charts
+  const salesData = [
+    { name: "Jan", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Feb", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Mar", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Apr", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "May", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Jun", total: Math.floor(Math.random() * 5000) + 1000 },
+  ]
 
   useEffect(() => {
     loadDashboardData()
@@ -131,25 +159,12 @@ export default function AdminDashboard() {
     setProducts(updatedProducts)
     localStorage.setItem("adminProducts", JSON.stringify(updatedProducts))
 
-    // Update stats
     setStats((prev) => ({
       ...prev,
       totalProducts: updatedProducts.length,
     }))
 
-    // Reset form
-    setNewProduct({
-      name: "",
-      price: "",
-      stock: "",
-      description: "",
-      category: "",
-      sku: "",
-      specifications: {},
-      image: null,
-      brand: "TTTSL",
-    })
-    setShowAddProduct(false)
+    resetForm()
   }
 
   const handleEditProduct = (product: Product) => {
@@ -165,6 +180,7 @@ export default function AdminDashboard() {
       image: null,
       brand: product.brand || "TTTSL",
     })
+    setShowAddProduct(true)
   }
 
   const handleSaveEdit = () => {
@@ -190,7 +206,10 @@ export default function AdminDashboard() {
     setProducts(updatedProducts)
     localStorage.setItem("adminProducts", JSON.stringify(updatedProducts))
 
-    // Reset form
+    resetForm()
+  }
+
+  const resetForm = () => {
     setEditingProduct(null)
     setNewProduct({
       name: "",
@@ -203,6 +222,7 @@ export default function AdminDashboard() {
       image: null,
       brand: "TTTSL",
     })
+    setShowAddProduct(false)
   }
 
   const handleDeleteProduct = (productId: number) => {
@@ -262,29 +282,20 @@ export default function AdminDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800"
-      case "processing":
-        return "bg-yellow-100 text-yellow-800"
-      case "shipped":
-        return "bg-blue-100 text-blue-800"
-      case "low-stock":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+      case "completed": return "bg-emerald-100 text-emerald-800 border-emerald-200"
+      case "processing": return "bg-amber-100 text-amber-800 border-amber-200"
+      case "shipped": return "bg-blue-100 text-blue-800 border-blue-200"
+      case "low-stock": return "bg-rose-100 text-rose-800 border-rose-200"
+      default: return "bg-slate-100 text-slate-800 border-slate-200"
     }
   }
 
   const currencySymbols: { [k: string]: string } = {
-    USD: "$",
-    NGN: "₦",
-    EUR: "€",
-    GBP: "£",
+    USD: "$", NGN: "₦", EUR: "€", GBP: "£",
   }
 
   const formatAmount = (amount: number) => {
     const symbol = currencySymbols[currency] || "$"
-    // Use toLocaleString for thousands separators; keep simple symbol prefix
     return `${symbol}${Number(amount || 0).toLocaleString()}`
   }
 
@@ -293,82 +304,220 @@ export default function AdminDashboard() {
     localStorage.setItem("adminCurrency", value)
   }
 
-  return (
-   <AdminAuthGuard>
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="border-b border-border">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-12">
-            <div className="flex items-center gap-4">
-              <Badge variant="secondary">Admin</Badge>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                View Store
-              </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+  const renderContent = () => {
+    switch (currentTab) {
+      case "products":
+        return (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-light tracking-tight">Products</h2>
+                <p className="text-muted-foreground">Manage your inventory and catalog.</p>
+              </div>
+              <Button onClick={() => setShowAddProduct(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="mr-2 h-4 w-4" /> Add Product
               </Button>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <Card key={product.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50">
+                  <div className="aspect-square relative bg-muted/30 overflow-hidden">
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full text-muted-foreground/30">
+                        <Package className="w-12 h-12" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full" onClick={() => handleEditProduct(product)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button size="icon" variant="destructive" className="h-9 w-9 rounded-full" onClick={() => handleDeleteProduct(product.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <Badge variant={product.stock > 0 ? "secondary" : "destructive"} className="backdrop-blur-md bg-white/80">
+                        {product.stock} left
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="mb-2">
+                      <h3 className="font-medium truncate" title={product.name}>{product.name}</h3>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">{product.category || "Uncategorized"}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-lg">{formatAmount(product.price)}</span>
+                      <Badge variant="outline" className={getStatusColor(product.status)}>{product.status}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {products.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                  <Package className="w-12 h-12 mb-4 opacity-20" />
+                  <p>No products found. Start by adding one.</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening with your store.</p>
-        </div>
-
-        {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalProducts}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalProducts === 0 ? "No products yet" : "Active products"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalOrders === 0 ? "No orders yet" : "Total orders"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalCustomers === 0 ? "No customers yet" : "Unique customers"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+        )
+      case "analytics":
+        return (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <h2 className="text-3xl font-light tracking-tight">Analytics</h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="col-span-4 border-border/50 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Revenue Overview</CardTitle>
+                  <CardDescription>Monthly revenue performance for the current year.</CardDescription>
+                </CardHeader>
+                <CardContent className="pl-2">
+                  <ResponsiveContainer width="100%" height={350}>
+                    <AreaChart data={salesData}>
+                      <defs>
+                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
+                      <Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorTotal)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              <Card className="col-span-3 border-border/50 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Top Performing Categories</CardTitle>
+                  <CardDescription>Distribution of sales by category.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    <p>More data needed to generate pie chart.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )
+      case "site-images":
+        return (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <h2 className="text-3xl font-light tracking-tight">Site Assets</h2>
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader>
+                <CardTitle>Global Images</CardTitle>
+                <CardDescription>Manage images used across the storefront (Hero, Banners, etc).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {[
+                    { key: "hero1", label: "Homepage Hero Banner" },
+                    { key: "stack1", label: "Intro Stack Card 1" },
+                    { key: "stack2", label: "Intro Stack Card 2" },
+                    { key: "stack3", label: "Intro Stack Card 3" },
+                    { key: "logo", label: "Site Logo" },
+                  ].map((item) => (
+                    <div key={item.key} className="space-y-3 group">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-medium">{item.label}</Label>
+                        <Button variant="ghost" size="sm" onClick={() => handleResetSiteImage(item.key)} className="text-xs h-7">Reset Default</Button>
+                      </div>
+                      <div className="aspect-video bg-muted/50 rounded-lg overflow-hidden relative border border-border transition-all hover:border-primary/50">
+                        <img src={siteImages[item.key] || getSiteImage(item.key)} alt={item.label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <p className="text-white text-sm mb-3 font-medium">Change Image</p>
+                          <div className="flex gap-2">
+                            <Label htmlFor={`upload-${item.key}`} className="cursor-pointer bg-white text-black px-4 py-2 rounded-full hover:bg-white/90 text-sm font-medium transition-transform hover:scale-105 active:scale-95">
+                              Upload New
+                            </Label>
+                            <Input id={`upload-${item.key}`} type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteImageUpload(item.key, e)} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-8 flex justify-end">
+                  <Button onClick={handleSaveSiteImages} size="lg" className="px-8"><Save className="mr-2 h-4 w-4" /> Save All Changes</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      case "orders":
+        return (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <h2 className="text-3xl font-light tracking-tight">Orders</h2>
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Recent Orders</CardTitle>
+                    <CardDescription>Manage and track customer orders.</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm"><Filter className="w-4 h-4 mr-2" /> Filter</Button>
+                    <Button variant="outline" size="sm">Export</Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {recentOrders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <ShoppingCart className="w-12 h-12 mb-4 opacity-20" />
+                    <p>No orders placed yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {recentOrders.map((order: any) => (
+                      <div key={order.id} className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg transition-colors border-b border-border/40 last:border-0">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                            {order.customer.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{order.id}</p>
+                            <p className="text-xs text-muted-foreground">{order.customer}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <Badge variant="outline" className={getStatusColor(order.status)}>{order.status}</Badge>
+                          <div className="text-right min-w-[80px]">
+                            <p className="font-medium text-sm">{formatAmount(order.total)}</p>
+                            <p className="text-[10px] text-muted-foreground">{order.date}</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4 text-muted-foreground" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )
+      default: // Dashboard
+        return (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-light tracking-tight">Dashboard</h2>
+                <p className="text-muted-foreground">Overview of your store's performance.</p>
+              </div>
               <div className="flex items-center gap-2">
                 <Select value={currency} onValueChange={handleCurrencyChange}>
-                  <SelectTrigger className="w-28">
+                  <SelectTrigger className="w-[100px]">
                     <SelectValue>{currency}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -378,438 +527,247 @@ export default function AdminDashboard() {
                     <SelectItem value="GBP">GBP (£)</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button variant="outline">Download Report</Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatAmount(stats.totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.totalRevenue === 0 ? "No revenue yet" : "Total revenue"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="orders">Recent Orders</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="site-images">Site Images</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="orders">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>Latest orders from your customers</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {recentOrders.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No orders yet. Orders will appear here when customers make purchases.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {recentOrders.map((order: any) => (
-                      <div
-                        key={order.id}
-                        className="flex items-center justify-between p-4 border border-border rounded-lg"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <p className="font-medium">{order.id}</p>
-                            <p className="text-sm text-muted-foreground">{order.customer}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
-                          <div className="text-right">
-                            <p className="font-medium">{formatAmount(order.total)}</p>
-                            <p className="text-sm text-muted-foreground">{order.date}</p>
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="products">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Products</CardTitle>
-                  <CardDescription>Manage your product inventory</CardDescription>
-                </div>
-                <Button onClick={() => setShowAddProduct(!showAddProduct)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Product
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {(showAddProduct || editingProduct) && (
-                  <div className="mb-6 p-6 border border-border rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-medium">{editingProduct ? "Edit Product" : "Add New Product"}</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowAddProduct(false)
-                          setEditingProduct(null)
-                          setNewProduct({
-                            name: "",
-                            price: "",
-                            stock: "",
-                            description: "",
-                            category: "",
-                            sku: "",
-                            specifications: {},
-                            image: null,
-                            brand: "TTTSL",
-                          })
-                        }}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <Label htmlFor="productName">Product Name *</Label>
-                        <Input
-                          id="productName"
-                          value={newProduct.name}
-                          onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                          placeholder="Enter product name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="productPrice">{`Price (${currencySymbols[currency] || "$"}) *`}</Label>
-                        <Input
-                          id="productPrice"
-                          type="number"
-                          value={newProduct.price}
-                          onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="productStock">Stock Quantity *</Label>
-                        <Input
-                          id="productStock"
-                          type="number"
-                          value={newProduct.stock}
-                          onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                          placeholder="0"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="productSku">SKU</Label>
-                        <Input
-                          id="productSku"
-                          value={newProduct.sku}
-                          onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
-                          placeholder="Auto-generated if empty"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="productCategory">Category</Label>
-                        <Select
-                          value={newProduct.category}
-                          onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="women">Women</SelectItem>
-                            <SelectItem value="men">Men</SelectItem>
-                            <SelectItem value="unisex">Unisex</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="productBrand">Brand</Label>
-                        <Select
-                          value={newProduct.brand}
-                          onValueChange={(value) => setNewProduct({ ...newProduct, brand: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select brand" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="TTTSL">TTTSL</SelectItem>
-                            <SelectItem value="Swanky by Ellery">Swanky by Ellery</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="productImage">Product Image</Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="productImage"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                          />
-                          <Upload className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <Label htmlFor="productDescription">Description</Label>
-                      <Textarea
-                        id="productDescription"
-                        value={newProduct.description}
-                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                        placeholder="Enter product description"
-                        rows={3}
-                      />
-                    </div>
-
-                    {/* Specifications Section */}
-                    <div className="mb-4">
-                      <Label>Specifications</Label>
-                      <div className="flex gap-2 mb-2">
-                        <Input
-                          placeholder="Specification name (e.g., Material)"
-                          value={specKey}
-                          onChange={(e) => setSpecKey(e.target.value)}
-                        />
-                        <Input
-                          placeholder="Specification value (e.g., 100% Cotton)"
-                          value={specValue}
-                          onChange={(e) => setSpecValue(e.target.value)}
-                        />
-                        <Button type="button" onClick={handleAddSpecification}>
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      {Object.entries(newProduct.specifications).length > 0 && (
-                        <div className="space-y-2">
-                          {Object.entries(newProduct.specifications).map(([key, value]) => (
-                            <div
-                              key={key}
-                              className="flex items-center justify-between p-2 bg-background rounded border"
-                            >
-                              <span className="text-sm">
-                                <strong>{key}:</strong> {value}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveSpecification(key)}
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      {editingProduct ? (
-                        <Button onClick={handleSaveEdit}>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Changes
-                        </Button>
-                      ) : (
-                        <Button onClick={handleAddProduct}>Add Product</Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowAddProduct(false)
-                          setEditingProduct(null)
-                          setNewProduct({
-                            name: "",
-                            price: "",
-                            stock: "",
-                            description: "",
-                            category: "",
-                            sku: "",
-                            specifications: {},
-                            image: null,
-                            brand: "TTTSL",
-                          })
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {products.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No products yet. Add your first product to get started.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {products.map((product: Product) => (
-                      <div
-                        key={product.id}
-                        className="flex items-center justify-between p-4 border border-border rounded-lg"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center overflow-hidden">
-                            {product.image ? (
-                              <img
-                                src={product.image || "/placeholder.svg"}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Package className="w-6 h-6 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              SKU: {product.sku} | Stock: {product.stock} units
-                            </p>
-                            {product.category && (
-                              <Badge variant="outline" className="mt-1">
-                                {product.category}
-                              </Badge>
-                            )}
-                            {product.brand && (
-                              <Badge variant="secondary" className="mt-1 ml-2">
-                                {product.brand}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Badge className={getStatusColor(product.status)}>
-                            {product.stock < 10 ? "Low Stock" : "Active"}
-                          </Badge>
-                          <div className="text-right">
-                            <p className="font-medium">{formatAmount(product.price)}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteProduct(product.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sales Trend</CardTitle>
-                  <CardDescription>Monthly sales performance</CardDescription>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="border-border/50 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-center h-48 text-muted-foreground">
-                    <div className="text-center">
-                      <TrendingUp className="w-12 h-12 mx-auto mb-4" />
-                      <p>Sales analytics will appear here when you have orders</p>
-                    </div>
-                  </div>
+                  <div className="text-2xl font-bold">{formatAmount(stats.totalRevenue)}</div>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center">
+                    <TrendingUp className="w-3 h-3 mr-1 text-emerald-500" />
+                    <span className="text-emerald-500 font-medium">+20.1%</span> from last month
+                  </p>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Products</CardTitle>
-                  <CardDescription>Best selling items this month</CardDescription>
+              <Card className="border-border/50 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Products</CardTitle>
+                  <Package className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  {products.length === 0 ? (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground">
-                      <p className="text-sm">Add products to see top performers</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {products.slice(0, 3).map((product: Product, index: number) => (
-                        <div key={product.id} className="flex justify-between items-center">
-                          <span className="text-sm">{product.name}</span>
-                          <span className="text-sm font-medium">0 sold</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                  <p className="text-xs text-muted-foreground mt-1">+12 new products added</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalOrders}</div>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center">
+                    <TrendingUp className="w-3 h-3 mr-1 text-emerald-500" />
+                    <span className="text-emerald-500 font-medium">+19%</span> from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Customers</CardTitle>
+                  <Users className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalCustomers}</div>
+                  <p className="text-xs text-muted-foreground mt-1">+201 since last hour</p>
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-          <TabsContent value="site-images">
-            <Card>
-              <CardHeader>
-                <CardTitle>Site Images</CardTitle>
-                <CardDescription>Manage global/site image placeholders (hero, stacks, logo)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">Upload images to replace site placeholders. Images are stored in your browser's localStorage for this site.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { key: "stack1", label: "Stack Card 1" },
-                    { key: "stack2", label: "Stack Card 2" },
-                    { key: "stack3", label: "Stack Card 3" },
-                    { key: "hero1", label: "Homepage Hero" },
-                    { key: "logo", label: "Site Logo" },
-                  ].map((item) => (
-                    <div key={item.key} className="p-4 border border-border rounded-md flex items-center gap-4">
-                      <div className="w-28 h-20 bg-muted rounded overflow-hidden flex items-center justify-center">
-                        <img src={siteImages[item.key] || getSiteImage(item.key)} alt={item.label} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="mb-2 font-medium">{item.label}</div>
-                        <div className="flex items-center gap-2">
-                          <Input type="file" accept="image/*" onChange={(e) => handleSiteImageUpload(item.key, e)} />
-                          <Button onClick={() => handleResetSiteImage(item.key)} variant="ghost" size="sm">
-                            Reset
-                          </Button>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="col-span-4 border-border/50 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Sales Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="pl-2">
+                  <ResponsiveContainer width="100%" height={350}>
+                    <LineChart data={salesData}>
+                      <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
+                      <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--primary))" }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              <Card className="col-span-3 border-border/50 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Latest actions on your store.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-8">
+                    {recentOrders.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No recent activity.</p>
+                    ) : (
+                      recentOrders.slice(0, 5).map((order: any) => (
+                        <div key={order.id} className="flex items-center">
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                            <ShoppingCart className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium leading-none">New order from {order.customer}</p>
+                            <p className="text-xs text-muted-foreground">{order.date}</p>
+                          </div>
+                          <div className="ml-auto font-medium text-sm">+{formatAmount(order.total)}</div>
                         </div>
-                      </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )
+    }
+  }
+
+  return (
+    <AdminAuthGuard>
+      <div className="flex min-h-screen bg-background font-sans">
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block w-64 shrink-0 sticky top-0 h-screen overflow-y-auto border-r border-border/50">
+          <AdminSidebar onLogout={handleLogout} />
+        </div>
+
+        {/* Mobile Sidebar Trigger */}
+        <div className="md:hidden fixed top-4 left-4 z-50">
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetContent side="left" className="p-0 w-64">
+              <AdminSidebar onLogout={handleLogout} onClick={() => setSidebarOpen(false)} />
+            </SheetContent>
+          </Sheet>
+          <Button variant="outline" size="icon" onClick={() => setSidebarOpen(true)} className="bg-background/80 backdrop-blur-md">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Main Content */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen bg-muted/10">
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
+
+        {/* Add/Edit Product Sheet */}
+        <Sheet open={showAddProduct} onOpenChange={setShowAddProduct}>
+          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+            <SheetHeader className="mb-6">
+              <SheetTitle className="text-2xl font-light">{editingProduct ? "Edit Product" : "Add New Product"}</SheetTitle>
+              <SheetDescription>
+                Fill in the details below to {editingProduct ? "update the" : "create a new"} product.
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productName">Name</Label>
+                  <Input id="productName" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="Product Name" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="productBrand">Brand</Label>
+                  <Select value={newProduct.brand} onValueChange={(value) => setNewProduct({ ...newProduct, brand: value })}>
+                    <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="TTTSL">TTTSL</SelectItem>
+                      <SelectItem value="Swanky by Ellery">Swanky by Ellery</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productPrice">Price</Label>
+                  <Input id="productPrice" type="number" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} placeholder="0.00" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="productStock">Stock</Label>
+                  <Input id="productStock" type="number" value={newProduct.stock} onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} placeholder="0" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="productSku">SKU</Label>
+                  <Input id="productSku" value={newProduct.sku} onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })} placeholder="Auto" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="productCategory">Category</Label>
+                <Select value={newProduct.category} onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="women">Women</SelectItem>
+                    <SelectItem value="men">Men</SelectItem>
+                    <SelectItem value="unisex">Unisex</SelectItem>
+                    <SelectItem value="accessories">Accessories</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="productDescription">Description</Label>
+                <Textarea id="productDescription" value={newProduct.description} onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} placeholder="Product description..." rows={4} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Image</Label>
+                <div className="flex items-center gap-4 p-4 border border-dashed rounded-lg bg-muted/30">
+                  {newProduct.image ? (
+                    <div className="relative w-20 h-20 rounded-md overflow-hidden">
+                      <img src={URL.createObjectURL(newProduct.image)} alt="Preview" className="w-full h-full object-cover" />
+                      <button onClick={() => setNewProduct({ ...newProduct, image: null })} className="absolute top-0 right-0 bg-black/50 text-white p-1"><X className="w-3 h-3" /></button>
+                    </div>
+                  ) : editingProduct?.image ? (
+                    <div className="relative w-20 h-20 rounded-md overflow-hidden">
+                      <img src={editingProduct.image} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 bg-muted rounded-md flex items-center justify-center">
+                      <Package className="w-8 h-8 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input id="imageUpload" type="file" accept="image/*" onChange={handleImageUpload} className="text-sm" />
+                    <p className="text-xs text-muted-foreground mt-1">Recommended: 800x800px, JPG or PNG.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Specifications</Label>
+                <div className="flex gap-2">
+                  <Input placeholder="Material" value={specKey} onChange={(e) => setSpecKey(e.target.value)} className="flex-1" />
+                  <Input placeholder="100% Cotton" value={specValue} onChange={(e) => setSpecValue(e.target.value)} className="flex-1" />
+                  <Button type="button" onClick={handleAddSpecification} size="icon" variant="secondary"><Plus className="w-4 h-4" /></Button>
+                </div>
+                <div className="space-y-2 mt-2">
+                  {Object.entries(newProduct.specifications).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-md border border-border/50">
+                      <span><span className="font-medium">{key}:</span> {value}</span>
+                      <button onClick={() => handleRemoveSpecification(key)} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
 
-                <div className="mt-4 flex gap-2">
-                  <Button onClick={handleSaveSiteImages}>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Images
-                  </Button>
-                  <Button variant="outline" onClick={() => { setSiteImages(JSON.parse(localStorage.getItem("siteImages")||"{}")) }}>
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            <SheetFooter className="mt-4">
+              <Button variant="outline" onClick={resetForm}>Cancel</Button>
+              <Button onClick={editingProduct ? handleSaveEdit : handleAddProduct}>{editingProduct ? "Save Changes" : "Create Product"}</Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       </div>
-    </div>
-   </AdminAuthGuard>
+    </AdminAuthGuard>
   )
-}  
+}

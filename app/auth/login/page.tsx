@@ -9,8 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
-import Header from "@/components/header"
-
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 
@@ -30,7 +28,7 @@ export default function CustomerLogin() {
     setError("")
 
     try {
-        // Customer login: check regular customer credentials
+      // Customer login: check regular customer credentials
       const users = JSON.parse(localStorage.getItem("customers") || "[]")
       const user = users.find((u: any) => u.email === formData.email && u.password === formData.password)
 
@@ -93,18 +91,21 @@ export default function CustomerLogin() {
           </div>
         </div>
       </nav>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-balance">Welcome Back</h1>
-            <p className="text-muted-foreground text-pretty">Sign in to your account to continue shopping</p>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold mb-2 text-foreground">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to your account to continue shopping</p>
           </div>
 
           <Card className="border-0 shadow-lg">
             <CardHeader className="space-y-1 text-center">
-                <CardTitle className="text-2xl">Sign In</CardTitle>
-                <CardDescription>Enter your email and password to access your account</CardDescription>
-                {/* gold accent underline to match admin style */}
-                <div className="mx-auto mt-2 swanky-underline" style={{ width: '4rem' }} />
-              </CardHeader>
+              <CardTitle className="text-2xl">Sign In</CardTitle>
+              <CardDescription>Enter your email and password to access your account</CardDescription>
+              {/* gold accent underline to match admin style */}
+              <div className="mx-auto mt-2 swanky-underline" style={{ width: '4rem' }} />
+            </CardHeader>
             <CardContent className="space-y-6">
               <Button
                 variant="outline"
@@ -204,5 +205,7 @@ export default function CustomerLogin() {
             </CardContent>
           </Card>
         </div>
+      </div>
+    </div>
   )
 }

@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { X, ArrowRight } from "lucide-react"
 import { getSiteImage } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
 
 type Product = {
   id: number
   name: string
   image?: string | null
+  description?: string
 }
 
 export default function StackCards() {
@@ -21,16 +23,37 @@ export default function StackCards() {
       const seen = localStorage.getItem("seenStackCards")
       if (seen === "true") return
       const saved = JSON.parse(localStorage.getItem("adminProducts") || "[]") as Product[]
-      const mapped = (saved || []).map((p: any) => ({ id: p.id, name: p.name, image: p.image }))
+      const mapped = (saved || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        image: p.image,
+        description: p.description
+      }))
+
       if (mapped.length === 0) {
         // fallback placeholders
         setCards([
-          { id: 1, name: "New Collection", image: getSiteImage("stack1") },
-          { id: 2, name: "Featured", image: getSiteImage("stack2") },
-          { id: 3, name: "Best Seller", image: getSiteImage("stack3") },
+          {
+            id: 1,
+            name: "New Collection",
+            image: getSiteImage("stack1"),
+            description: "Discover our latest arrivals for the season."
+          },
+          {
+            id: 2,
+            name: "Featured",
+            image: getSiteImage("stack2"),
+            description: "Handpicked styles just for you."
+          },
+          {
+            id: 3,
+            name: "Best Seller",
+            image: getSiteImage("stack3"),
+            description: "Our most loved pieces."
+          },
         ])
       } else {
-        setCards(mapped.slice(0, 6))
+        setCards(mapped.slice(0, 3))
       }
 
       setVisible(true)
@@ -56,56 +79,86 @@ export default function StackCards() {
   if (!visible) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="relative w-full max-w-3xl px-4">
-        <button
-          aria-label="Skip intro"
-          onClick={handleSkip}
-          className="absolute right-3 top-3 bg-background/90 rounded-full p-2 shadow-md"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="relative w-full max-w-md px-4 h-[70vh] flex flex-col items-center justify-center">
 
-        <div className="relative h-[60vh] sm:h-[70vh]">
-          {cards.map((card, i) => {
-            const offset = i - index
-            const visibleCard = Math.abs(offset) <= 3
-            const z = 100 - Math.abs(offset)
-            const translateY = Math.min(Math.abs(offset) * 14, 80)
-            const scale = Math.max(1 - Math.abs(offset) * 0.04, 0.86)
-            const opacity = visibleCard ? 1 - Math.abs(offset) * 0.15 : 0
-
-            return (
-              <div
-                key={card.id}
-                style={{
-                  zIndex: z,
-                  transform: `translateY(${translateY}px) scale(${scale})`,
-                  opacity,
-                }}
-                className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full sm:w-3/4 h-[56vh] sm:h-[64vh] rounded-lg overflow-hidden shadow-2xl transition-all duration-400 bg-background flex flex-col`}
-              >
-                <img
-                  src={card.image || "/placeholder.svg"}
-                  alt={card.name}
-                  className="w-full h-3/4 object-cover"
-                />
-                <div className="p-4 bg-background flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{card.name}</h3>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleNext}>Next</Button>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+        <div className="absolute top-4 right-4 z-50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSkip}
+            className="text-white hover:bg-white/20 rounded-full"
+          >
+            <X className="w-6 h-6" />
+          </Button>
         </div>
-        <div className="mt-4 text-center text-sm text-background/80">
-          <p>
-            Tip: You can skip this intro anytime. Featured items are managed from the Admin Dashboard.
-          </p>
+
+        <div className="relative w-full h-full flex items-center justify-center">
+          <AnimatePresence>
+            {cards.map((card, i) => {
+              // Only render current and next few cards
+              if (i < index) return null;
+
+              const isFront = i === index;
+              const offset = i - index;
+
+              // Limit rendered stack depth
+              if (offset > 2) return null;
+
+              return (
+                <motion.div
+                  key={card.id}
+                  initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                  animate={{
+                    scale: 1 - offset * 0.05,
+                    y: offset * 15,
+                    opacity: 1 - offset * 0.2,
+                    zIndex: cards.length - i
+                  }}
+                  exit={{ x: -300, opacity: 0, rotate: -10 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                  drag={isFront ? "x" : false}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.x < -100) {
+                      handleNext();
+                    }
+                  }}
+                  className="absolute w-full h-[500px] bg-background rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+                >
+                  <div className="relative h-3/4 w-full">
+                    <img
+                      src={card.image || "/placeholder.svg"}
+                      alt={card.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  </div>
+
+                  <div className="h-1/4 p-6 flex flex-col justify-between bg-background">
+                    <div>
+                      <h3 className="text-2xl font-light tracking-tight mb-1">{card.name}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{card.description || "Experience the essence of style."}</p>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-4">
+                      <div className="flex gap-1">
+                        {cards.map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${idx === index ? "w-6 bg-primary" : "w-1.5 bg-muted"}`}
+                          />
+                        ))}
+                      </div>
+                      <Button onClick={handleNext} className="rounded-full px-6" variant="swanky">
+                        {index === cards.length - 1 ? "Start Shopping" : "Next"} <ArrowRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
         </div>
       </div>
     </div>
