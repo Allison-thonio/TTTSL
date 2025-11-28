@@ -15,6 +15,7 @@ import { getSiteImage } from "@/lib/utils"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fetchProducts, upsertProduct, removeProduct, fetchOrders, fetchSiteImages, updateSiteImages } from "@/app/actions"
+import { type Product, type Order } from "@/lib/db"
 import {
   Package,
   Users,
@@ -46,20 +47,6 @@ import {
   Area
 } from "recharts"
 
-interface Product {
-  id: number
-  name: string
-  price: number
-  stock: number
-  status: string
-  image: string | null
-  description?: string
-  category?: string
-  specifications?: { [key: string]: string }
-  sku?: string
-  brand?: string
-}
-
 export default function AdminDashboard() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -72,7 +59,7 @@ export default function AdminDashboard() {
     totalCustomers: 0,
     totalRevenue: 0,
   })
-  const [recentOrders, setRecentOrders] = useState([])
+  const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
