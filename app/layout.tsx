@@ -5,9 +5,9 @@ import { GeistMono } from 'geist/font/mono'
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
-  import Link from "next/link"
-import { SearchBar } from "@/components/search-bar"
- 
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+
 export const metadata: Metadata = {
   title: "TTTSL - Timeless Style, Transparent Values",
   description:
@@ -21,13 +21,19 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-  
-       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
-        <Analytics />
+    <html lang="en" suppressHydrationWarning>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Suspense fallback={null}>{children}</Suspense>
+          <Toaster />
+          <Analytics />
+        </ThemeProvider>
       </body>
-  
-     </html>
+    </html>
   )
 }
