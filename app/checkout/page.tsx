@@ -51,7 +51,7 @@ const formSchema = z.object({
   country: z.string().min(1, "Country is required"),
   postalCode: z.string().min(3, "Postal code is required"),
   phone: z.string().min(10, "Valid phone number is required"),
-  paymentMethod: z.enum(["card", "paypal", "cod"]),
+  paymentMethod: z.enum(["card", "paypal", "apple", "google", "cod"]),
 })
 
 export default function CheckoutPage() {
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsProcessing(true)
 
-    if (values.paymentMethod === "card") {
+    if (values.paymentMethod === "card" || values.paymentMethod === "apple" || values.paymentMethod === "google") {
       try {
         const response = await fetch("/api/checkout", {
           method: "POST",
@@ -316,7 +316,7 @@ export default function CheckoutPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Payment Method</CardTitle>
-                    <CardDescription>Select how you want to pay</CardDescription>
+                    <CardDescription>Select your preferred payment option</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <FormField
@@ -328,34 +328,78 @@ export default function CheckoutPage() {
                             <RadioGroup
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              className="flex flex-col space-y-1"
+                              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                             >
-                              <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                              <FormItem>
                                 <FormControl>
-                                  <RadioGroupItem value="card" />
+                                  <RadioGroupItem value="card" className="peer sr-only" />
                                 </FormControl>
-                                <div className="flex-1 flex items-center justify-between">
-                                  <FormLabel className="font-normal cursor-pointer">Credit Card (Stripe)</FormLabel>
-                                  <CreditCard className="w-5 h-5 text-muted-foreground" />
-                                </div>
+                                <Label
+                                  htmlFor="card"
+                                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                                >
+                                  <CreditCard className="mb-3 h-6 w-6" />
+                                  <span className="font-medium">Credit / Debit Card</span>
+                                  <span className="text-[10px] text-muted-foreground mt-1 text-center">Visa, Mastercard, Verve</span>
+                                </Label>
                               </FormItem>
 
-                              <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                              <FormItem>
                                 <FormControl>
-                                  <RadioGroupItem value="paypal" />
+                                  <RadioGroupItem value="paypal" className="peer sr-only" />
                                 </FormControl>
-                                <div className="flex-1">
-                                  <FormLabel className="font-normal cursor-pointer">PayPal</FormLabel>
-                                </div>
+                                <Label
+                                  htmlFor="paypal"
+                                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                                >
+                                  <svg className="mb-3 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.946 5.05-4.336 6.795-9.077 6.795h-2.14l-3.794 8.009h-.004zm.691-12.194h3.13c4.12 0 6.649-1.312 7.363-5.36.069-.395.118-.795.144-1.21.14-2.22-1.626-3.04-4.637-3.04h-5.26l-3.07 16.68h2.952l2.378-7.07z" />
+                                  </svg>
+                                  <span className="font-medium">PayPal</span>
+                                </Label>
                               </FormItem>
 
-                              <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                              <FormItem>
                                 <FormControl>
-                                  <RadioGroupItem value="cod" />
+                                  <RadioGroupItem value="apple" className="peer sr-only" />
                                 </FormControl>
-                                <div className="flex-1">
-                                  <FormLabel className="font-normal cursor-pointer">Cash on Delivery</FormLabel>
-                                </div>
+                                <Label
+                                  htmlFor="apple"
+                                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                                >
+                                  <svg className="mb-3 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
+                                  </svg>
+                                  <span className="font-medium">Apple Pay</span>
+                                </Label>
+                              </FormItem>
+
+                              <FormItem>
+                                <FormControl>
+                                  <RadioGroupItem value="google" className="peer sr-only" />
+                                </FormControl>
+                                <Label
+                                  htmlFor="google"
+                                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                                >
+                                  <svg className="mb-3 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z" />
+                                  </svg>
+                                  <span className="font-medium">Google Pay</span>
+                                </Label>
+                              </FormItem>
+
+                              <FormItem className="sm:col-span-2">
+                                <FormControl>
+                                  <RadioGroupItem value="cod" className="peer sr-only" />
+                                </FormControl>
+                                <Label
+                                  htmlFor="cod"
+                                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                                >
+                                  <Truck className="mb-3 h-6 w-6" />
+                                  <span className="font-medium">Cash on Delivery</span>
+                                </Label>
                               </FormItem>
                             </RadioGroup>
                           </FormControl>
@@ -363,6 +407,19 @@ export default function CheckoutPage() {
                         </FormItem>
                       )}
                     />
+
+                    {paymentMethod === "card" && (
+                      <div className="p-4 border rounded-md bg-muted/20 space-y-4 animate-in slide-in-from-top-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <Shield className="w-4 h-4" />
+                          <span>Securely processed by Stripe</span>
+                        </div>
+                        {/* Stripe Elements would be injected here in a real integration */}
+                        <div className="p-3 bg-background border rounded text-sm text-center text-muted-foreground">
+                          You will be redirected to Stripe's secure checkout page to complete your payment.
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
